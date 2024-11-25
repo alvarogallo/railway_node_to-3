@@ -56,8 +56,8 @@ function setupApiRoutes(ambienteTimer) {
 
     // GET: Reiniciar ambiente
     router.get('/reset', (req, res) => {
-        ambienteTimer.reset();
-        res.json({ message: 'Ambiente reseteado correctamente' });
+        //ambienteTimer.reset();
+        res.json({ message: 'Ambiente reseteado correctamente, (desabilitada la opcion por seguridad)' });
     });
 
     return router;
