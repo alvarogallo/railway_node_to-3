@@ -5,17 +5,13 @@ const fetch = require('node-fetch');
 const TIMEZONE = 'America/Bogota';
 moment.tz.setDefault(TIMEZONE);
 
-const DEFAULT_CONFIG = {
-    canal: 'Bingo_Automatico',
-    token: 'bingo_automatico',
-    baseUrl: 'https://railwaynodemysql-production-ba44.up.railway.app/enviar-mensaje'
-};
+
 
 class EventosService {
     constructor() {
-        this.socketCanal = process.env.SOCKET_CANAL_V2 || DEFAULT_CONFIG.canal;
-        this.socketToken = process.env.SOCKET_TOKEN_V2 || DEFAULT_CONFIG.token;
-        this.socketUrl = process.env.SOCKET_URL_V2 || DEFAULT_CONFIG.baseUrl;
+        this.socketCanal = process.env.SOCKET_CANAL_V2;
+        this.socketToken = process.env.SOCKET_TOKEN_V2;
+        this.socketUrl = process.env.SOCKET_URL_V2;
 
         console.log('Socket configurado:');
         console.log('Canal:', this.socketCanal);

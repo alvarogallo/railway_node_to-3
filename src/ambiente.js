@@ -24,26 +24,17 @@ class AmbienteTimer {
         }
     }
 
-    // async setMySQLConnection(pool) {
-    //     this.mysqlService = new MySQLService(pool);
-    //     // Pasar la conexión al bingoService
-    //     if (this.bingoService) {
-    //         this.bingoService.setMySQLPool(pool);
-    //     }
-    //     if (this.mysqlService.isConnected) {
-    //         await this.loadParameters();
-    //     }
-    // }
     async setMySQLConnection(pool) {
         this.mysqlService = new MySQLService(pool);
         if (this.bingoService) {
-            this.bingoService.setPool(pool); // Pasamos el pool al bingoService
+            this.bingoService.setPool(pool); 
             console.log('Pool MySQL configurado en BingoService desde AmbienteTimer');
         }
         if (this.mysqlService.isConnected) {
             await this.loadParameters();
         }
     }
+
     async loadParameters() {
         try {
             // Cargar intervalo de minutos
@@ -123,101 +114,100 @@ class AmbienteTimer {
         }
     }
 
-// ... resto del código ...
+    calculateTimeStarts() {
+        const now = new Date();
+        let nextPoints = [];
 
-calculateTimeStarts() {
-    const now = new Date();
-    let nextPoints = [];
+        // Obtener la hora actual en minutos desde medianoche
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // Obtener la hora actual en minutos desde medianoche
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        // Calcular el próximo intervalo
+        const nextIntervalMinutes = Math.ceil(currentMinutes / this.intervalo) * this.intervalo;
 
-    // Calcular el próximo intervalo
-    const nextIntervalMinutes = Math.ceil(currentMinutes / this.intervalo) * this.intervalo;
+        // Primer punto
+        const firstPoint = new Date(now);
+        firstPoint.setHours(Math.floor(nextIntervalMinutes / 60));
+        firstPoint.setMinutes(nextIntervalMinutes % 60);
+        firstPoint.setSeconds(0);
+        firstPoint.setMilliseconds(0);
 
-    // Primer punto
-    const firstPoint = new Date(now);
-    firstPoint.setHours(Math.floor(nextIntervalMinutes / 60));
-    firstPoint.setMinutes(nextIntervalMinutes % 60);
-    firstPoint.setSeconds(0);
-    firstPoint.setMilliseconds(0);
+        // Segundo punto
+        const secondPoint = new Date(firstPoint);
+        secondPoint.setMinutes(firstPoint.getMinutes() + this.intervalo);
 
-    // Segundo punto
-    const secondPoint = new Date(firstPoint);
-    secondPoint.setMinutes(firstPoint.getMinutes() + this.intervalo);
+        nextPoints = [firstPoint, secondPoint];
 
-    nextPoints = [firstPoint, secondPoint];
+        // Limpiar timers anteriores
+        this.startTimers.forEach(timer => clearTimeout(timer));
+        this.startTimers = [];
 
-    // Limpiar timers anteriores
-    this.startTimers.forEach(timer => clearTimeout(timer));
-    this.startTimers = [];
+        this.timeStarts = nextPoints.map(date => ({
+            time: this.formatTimeShort(date),
+            name: date.toISOString().slice(0,10).replace(/-/g, '') + '_' + 
+                 date.getHours().toString().padStart(2, '0') + 
+                 date.getMinutes().toString().padStart(2, '0'),
+            timestamp: date.getTime()
+        }));
 
-    this.timeStarts = nextPoints.map(date => ({
-        time: this.formatTimeShort(date),
-        timestamp: date.getTime()
-    }));
+        // Configurar los timers
+        this.timeStarts.forEach(point => {
+            const timeUntilStart = point.timestamp - now.getTime();
+            if (timeUntilStart > 0) {
+                const timer = setTimeout(async () => {
+                    try {
+                        console.log(`=== HORA DE ARRANCAR (${point.time}) ===`);
+                        
+                        if (!this.bingoService) {
+                            console.error('⚠️ Error: bingoService no está disponible');
+                            return;
+                        }
 
-    // Configurar los timers
-    this.timeStarts.forEach(point => {
-        const timeUntilStart = point.timestamp - now.getTime();
-        if (timeUntilStart > 0) {
-            const timer = setTimeout(async () => {
-                try {
-                    console.log(`=== HORA DE ARRANCAR (${point.time}) ===`);
-                    
-                    if (!this.bingoService) {
-                        console.error('⚠️ Error: bingoService no está disponible');
-                        return;
-                    }
-
-                    // Leer el parámetro segundos justo antes de iniciar el bingo
-                    if (this.mysqlService?.isConnected) {
-                        try {
-                            const segundos = await this.mysqlService.getParametro('segundos');
-                            if (segundos) {
-                                const segundosNum = parseInt(segundos);
-                                this.bingoService.setIntervalo(segundosNum);
-                                console.log(`Segundos actualizados de la BD: ${segundosNum}`);
-                            } else {
-                                console.log('Usando valor por defecto: 20 segundos');
+                        // Leer el parámetro segundos justo antes de iniciar el bingo
+                        if (this.mysqlService?.isConnected) {
+                            try {
+                                const segundos = await this.mysqlService.getParametro('segundos');
+                                if (segundos) {
+                                    const segundosNum = parseInt(segundos);
+                                    this.bingoService.setIntervalo(segundosNum);
+                                    console.log(`Segundos actualizados de la BD: ${segundosNum}`);
+                                } else {
+                                    console.log('Usando valor por defecto: 20 segundos');
+                                    this.bingoService.setIntervalo(20);
+                                }
+                            } catch (error) {
+                                console.log('Error al leer segundos, usando valor por defecto:', error.message);
                                 this.bingoService.setIntervalo(20);
                             }
-                        } catch (error) {
-                            console.log('Error al leer segundos, usando valor por defecto:', error.message);
-                            this.bingoService.setIntervalo(20);
                         }
-                    }
 
-                    if (this.bingoService.isRunning) {
-                        console.log('⚠️ Ya hay un bingo en curso');
-                    } else {
-                        console.log('🎲 Iniciando nuevo bingo...');
-                        this.bingoService.start();
-                        
-                        // Emitir evento de inicio de bingo
-                        const fecha_bingo = new Date(point.timestamp);
-                        await EventosService.emitirEvento(
-                            'Bingo',
-                            'Inicia',
-                            fecha_bingo
-                        );
+                        if (this.bingoService.isRunning) {
+                            console.log('⚠️ Ya hay un bingo en curso');
+                        } else {
+                            console.log('🎲 Iniciando nuevo bingo...');
+                            this.bingoService.start();
+                            
+                            // Emitir evento de inicio de bingo
+                            const fecha_bingo = new Date(point.timestamp);
+                            await EventosService.emitirEvento(
+                                'Bingo',
+                                'Inicia',
+                                fecha_bingo
+                            );
 
-                        if (this.mysqlService?.isConnected) {
-                            await this.mysqlService.registrarTimeStart(fecha_bingo);
+                            if (this.mysqlService?.isConnected) {
+                                await this.mysqlService.registrarTimeStart(fecha_bingo);
+                            }
                         }
+                    } catch (error) {
+                        console.error('Error al iniciar bingo:', error);
                     }
-                } catch (error) {
-                    console.error('Error al iniciar bingo:', error);
-                }
-            }, timeUntilStart);
-            this.startTimers.push(timer);
-        }
-    });
+                }, timeUntilStart);
+                this.startTimers.push(timer);
+            }
+        });
 
-    console.log('Puntos de arranque calculados:', this.timeStarts.map(t => t.time));
-}
-
-// ... resto del código ...
+        console.log('Puntos de arranque calculados:', this.timeStarts.map(t => t.time));
+    }
 
     updateExpirationTime() {
         this.expiresAt = new Date(Date.now() + (this.hoursToLive * 60 * 60 * 1000));
@@ -256,21 +246,57 @@ calculateTimeStarts() {
 
     getStatus() {
         const now = new Date();
+        
+        // Obtenemos los números del bingo actual si está en curso
+        const numerosActuales = this.bingoService ? 
+            this.bingoService.usedNumbers.slice(-5) : // Últimos 5 números
+            [];
+            
+        // Calculamos el tiempo restante en formato amigable
+        const timeUntilExpire = this.expiresAt ? 
+            Math.max(0, Math.floor((this.expiresAt - now) / 1000 / 60)) : 0;
+
         return {
             conexiones: this.conexiones,
             createdAt: this.formatDateTime(this.createdAt),
             expiresAt: this.formatDateTime(this.expiresAt),
+            tiempoRestante: {
+                minutos: timeUntilExpire,
+                formato: `${Math.floor(timeUntilExpire/60)}h ${timeUntilExpire%60}m`
+            },
             currentTime: this.formatTimeShort(now),
             timeStarts: this.timeStarts.map(point => ({
                 time: point.time,
-                secondsUntilStart: Math.max(0, Math.round((point.timestamp - now.getTime()) / 1000))
+                name: point.name,
+                secondsUntilStart: Math.max(0, Math.round((point.timestamp - now.getTime()) / 1000)),
+                minutosRestantes: Math.ceil(Math.max(0, (point.timestamp - now.getTime()) / 1000 / 60))
             })),
             isActive: !!this.timer,
             bingoEnCurso: this.bingoService ? this.bingoService.isRunning : false,
-            numerosBingoUsados: this.bingoService ? this.bingoService.usedNumbers.length : 0,
-            conexion_mysql: !!this.mysqlService?.isConnected,
-            intervalo: this.intervalo,
-            segundos: this.bingoService ? this.bingoService.intervaloSegundos : 20
+            bingo: {
+                totalNumeros: this.bingoService ? this.bingoService.usedNumbers.length : 0,
+                ultimosNumeros: numerosActuales,
+                numerosFaltantes: this.bingoService ? 
+                    75 - this.bingoService.usedNumbers.length : 
+                    75,
+                porcentajeCompletado: this.bingoService ? 
+                    Math.round((this.bingoService.usedNumbers.length / 75) * 100) : 
+                    0,
+                tiempoInicio: this.bingoService?.startTime ? 
+                    this.formatDateTime(this.bingoService.startTime) : 
+                    null
+            },
+            sistema: {
+                conexion_mysql: !!this.mysqlService?.isConnected,
+                intervalo_minutos: this.intervalo,
+                intervalo_segundos: this.bingoService ? this.bingoService.intervaloSegundos : 20,
+                memoria_usada: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
+                uptime_minutos: Math.floor(process.uptime() / 60)
+            },
+            conexionesActivas: {
+                total: this.conexionesActivas.size,
+                ips: Array.from(this.conexionesActivas)
+            }
         };
     }
 
@@ -280,6 +306,7 @@ calculateTimeStarts() {
             currentTime: this.formatTimeShort(now),
             timeStarts: this.timeStarts.map(point => ({
                 time: point.time,
+                name: point.name,
                 secondsUntilStart: Math.max(0, Math.round((point.timestamp - now.getTime()) / 1000))
             }))
         };
