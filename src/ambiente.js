@@ -117,39 +117,33 @@ class AmbienteTimer {
     calculateTimeStarts() {
         const now = new Date();
         let nextPoints = [];
-
-        // Obtener la hora actual en minutos desde medianoche
+    
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-        // Calcular el próximo intervalo
         const nextIntervalMinutes = Math.ceil(currentMinutes / this.intervalo) * this.intervalo;
-
-        // Primer punto
+    
         const firstPoint = new Date(now);
         firstPoint.setHours(Math.floor(nextIntervalMinutes / 60));
         firstPoint.setMinutes(nextIntervalMinutes % 60);
         firstPoint.setSeconds(0);
         firstPoint.setMilliseconds(0);
-
-        // Segundo punto
+    
         const secondPoint = new Date(firstPoint);
         secondPoint.setMinutes(firstPoint.getMinutes() + this.intervalo);
-
+    
         nextPoints = [firstPoint, secondPoint];
-
-        // Limpiar timers anteriores
-        this.startTimers.forEach(timer => clearTimeout(timer));
-        this.startTimers = [];
-
-        this.timeStarts = nextPoints.map(date => ({
-            time: this.formatTimeShort(date),
-            name: `${date.getFullYear()}${
-                String(date.getMonth() + 1).padStart(2, '0')}${
-                String(date.getDate()).padStart(2, '0')}_${
-                String(date.getHours()).padStart(2, '0')}${
-                String(date.getMinutes()).padStart(2, '0')}`,
-            timestamp: date.getTime()
-        }));
+    
+        this.timeStarts = nextPoints.map(date => {
+            const localTime = this.formatTimeShort(date);
+            const [hours, minutes] = localTime.split(':');
+            return {
+                time: localTime,
+                name: `${date.getFullYear()}${
+                    String(date.getMonth() + 1).padStart(2, '0')}${
+                    String(date.getDate()).padStart(2, '0')}_${
+                    hours}${minutes}`,
+                timestamp: date.getTime()
+            };
+        });
 
         // Configurar los timers
         this.timeStarts.forEach(point => {
