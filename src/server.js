@@ -1,45 +1,47 @@
-const mysql = require('mysql2');
+// Archivo: envLogger.js
 
-// Configuración de la base de datos
-const dbConfig = {
-    host: process.env.DB_HOST || 'your-host',
-    user: process.env.DB_USER || 'your-username',
-    password: process.env.DB_PASSWORD || 'your-password',
-    database: process.env.DB_NAME || 'your-database',
-    port: process.env.DB_PORT || 3306,
-};
+// Importamos dotenv para cargar variables de entorno desde .env en desarrollo local
+require('dotenv').config();
 
-// Mensajes personalizados
-console.log('Verificando configuración de la base de datos...');
-if (!dbConfig.host || !dbConfig.user || !dbConfig.password || !dbConfig.database) {
-    console.error('Error: Falta información de configuración. Revisa las variables de entorno.');
-    process.exit(1);
-} else {
-    console.log('Servidor encontrado...');
-    console.log(`Puerto válido: ${dbConfig.port}`);
+// Función para mostrar todas las variables de entorno
+function logEnvironmentVariables() {
+    console.log('\n=== Variables de Entorno ===\n');
+    
+    // Obtener todas las variables de entorno
+    const environmentVars = process.env;
+    
+    // Convertir el objeto de variables en un array para ordenarlo
+    const sortedVars = Object.entries(environmentVars).sort();
+    
+    // Iterar sobre cada variable y mostrarla
+    sortedVars.forEach(([key, value]) => {
+        // Ocultar parte del valor si parece ser una clave secreta o token
+        const isSecret = key.toLowerCase().includes('key') || 
+                        key.toLowerCase().includes('secret') || 
+                        key.toLowerCase().includes('token') ||
+                        key.toLowerCase().includes('password');
+        
+        const displayValue = isSecret ? '********' : value;
+        
+        console.log(`${key}: ${displayValue}`);
+    });
+    
+    console.log('\n=== Fin de Variables de Entorno ===\n');
 }
 
-// Crear conexión
-const connection = mysql.createConnection(dbConfig);
+// Ejecutar la función al iniciar el script
+logEnvironmentVariables();
 
-connection.connect((err) => {
-    if (err) {
-        console.error('Error al conectar a la base de datos:', err.message);
-        process.exit(1);
-    } else {
-        console.log('Conexión exitosa a la base de datos.');
-        console.log('Ejecutando consulta de prueba...');
-        
-        // Consulta de prueba
-        connection.query('SELECT 1 + 1 AS result', (queryErr, results) => {
-            if (queryErr) {
-                console.error('Error al ejecutar la consulta:', queryErr.message);
-            } else {
-                console.log('Consulta ejecutada correctamente.');
-                console.log('Resultado de la consulta de prueba:', results[0].result);
-            }
-            console.log('Cerrando conexión...');
-            connection.end(() => console.log('Conexión cerrada.'));
-        });
-    }
+// Si quieres usar esto como parte de una aplicación Express:
+/*
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Logging de variables al inicio
+logEnvironmentVariables();
+
+app.listen(port, () => {
+    console.log(`Servidor corriendo en puerto ${port}`);
 });
+*/
