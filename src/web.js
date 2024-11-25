@@ -5,7 +5,7 @@ function setupWebRoutes(app, pool) {
     // Servir archivos estáticos desde la carpeta public
 
 
-    app.get('/', (req, res) => {
+    app.get('/paginas', (req, res) => {
         res.send(`
             <html>
             <head>
