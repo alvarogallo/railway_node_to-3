@@ -70,37 +70,47 @@ class BingoService {
             console.log('El bingo ya está en curso');
             return;
         }
-
+    
         this.startTime = fechaInicio;
         this.formatoEvento = `Bingo_${moment(fechaInicio).format('YYYY-MM-DD_HH:mm')}`;
-
+    
+        // Enviar evento de inicio
         await this.emitirNumero(0, 0, fechaInicio);
-
-        
+    
         console.log('\n=== NUEVO BINGO INICIADO ===');
         console.log('Formato de evento:', this.formatoEvento);
         console.log(`Intervalo configurado: ${this.intervaloSegundos} segundos`);
-
+    
         this.numbers = Array.from({ length: 75 }, (_, i) => i + 1);
         this.usedNumbers = [];
         this.shuffle();
         this.isRunning = true;
-
-        this.currentInterval = setInterval(async () => {
+    
+        const emitNextNumber = async () => {
+            if (!this.isRunning) {
+                clearInterval(this.currentInterval);
+                return;
+            }
+    
             const number = this.getNextNumber();
             if (number) {
                 const currentTime = new Date();
                 console.log(`\n🎲 Número ${number} (${this.usedNumbers.length}/75)`);
                 console.log(`Números usados: ${this.usedNumbers.join(', ')}`);
                 
-                await this.emitirNumero(
-                    number,
-                    this.usedNumbers.length,
-                    currentTime
-                );
+                try {
+                    await this.emitirNumero(number, this.usedNumbers.length, currentTime);
+                } catch (error) {
+                    console.error('Error al emitir número:', error);
+                }
+            } else {
+                clearInterval(this.currentInterval);
+                this.stop();
             }
-        }, this.intervaloSegundos * 1000);
-
+        };
+    
+        // Establecer el intervalo para emitir números
+        this.currentInterval = setInterval(emitNextNumber, this.intervaloSegundos * 1000);
         console.log(`Generación de números iniciada - Intervalo: ${this.intervaloSegundos} segundos`);
     }
 
