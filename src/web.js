@@ -64,7 +64,7 @@ function setupWebRoutes(app, pool) {
         }
 
         try {
-            const [columns] = await pool.query('SHOW COLUMNS FROM bingos');
+            const [columns] = await pool.query('SHOW COLUMNS FROM bingos_parametros');
             const [data] = await pool.query('SELECT * FROM bingo_bingos ORDER BY id DESC LIMIT 10');
             
             res.json({
@@ -73,7 +73,7 @@ function setupWebRoutes(app, pool) {
             });
         } catch (error) {
             res.status(500).json({ 
-                error: 'Error al verificar tabla bingos',
+                error: 'Error al verificar tabla bingo_bingos',
                 details: error.message 
             });
         }
