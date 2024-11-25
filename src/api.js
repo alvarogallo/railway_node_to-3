@@ -19,7 +19,7 @@ function setupApiRoutes(ambienteTimer) {
         res.json(ambienteTimer.getStatus());
     });
 
-    // Nueva ruta api_nums
+    // Nueva ruta api_nums  es /api/api_nums
     router.get('/api_nums', (req, res) => {
         const { bingoService } = ambienteTimer;
         if (!bingoService || !bingoService.isRunning) {

@@ -3,6 +3,68 @@ const express = require('express');
 
 function setupWebRoutes(app, pool) {
     // Servir archivos estáticos desde la carpeta public
+
+    app.get('/', (req, res) => {
+        app.get('/', (req, res) => {
+            res.send(`
+                <html>
+                <head>
+                    <title>API Bingo</title>
+                    <style>
+                        body { font-family: Arial; margin: 40px; }
+                        .route { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+                        .method { color: #1a73e8; font-weight: bold; }
+                        .description { color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <h1>API Bingo - Rutas Disponibles</h1>
+                    
+                    <div class="route">
+                        <span class="method">GET</span> /api
+                        <div class="description">Estado general del sistema y bingo actual</div>
+                    </div>
+        
+                    <div class="route">
+                        <span class="method">GET</span> /api/api_nums
+                        <div class="description">Números cantados en el bingo actual</div>
+                    </div>
+        
+                    <div class="route">
+                        <span class="method">GET</span> /api/time-starts
+                        <div class="description">Próximos horarios de inicio</div>
+                    </div>
+        
+                    <div class="route">
+                        <span class="method">GET</span> /api/reset
+                        <div class="description">Reiniciar el ambiente</div>
+                    </div>
+        
+                    <div class="route">
+                        <span class="method">GET</span> /tables-info
+                        <div class="description">Información de las tablas en la base de datos</div>
+                    </div>
+        
+                    <div class="route">
+                        <span class="method">GET</span> /check-bingos
+                        <div class="description">Verificar tabla de bingos</div>
+                    </div>
+        
+                    <div class="route">
+                        <span class="method">GET</span> /check-parametros
+                        <div class="description">Verificar parámetros del sistema</div>
+                    </div>
+        
+                    <div class="route">
+                        <span class="method">GET</span> /setup-db
+                        <div class="description">Configurar/crear tablas en la base de datos</div>
+                    </div>
+                </body>
+                </html>
+            `);
+        });       
+    });
+
     app.use(express.static(path.join(__dirname, '../public')));
 
     // Ruta para crear las tablas si no existen
