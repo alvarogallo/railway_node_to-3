@@ -9,13 +9,19 @@ moment.tz.setDefault(TIMEZONE);
 
 class EventosService {
     constructor() {
+        let baseUrl = process.env.SOCKET_URL_V2;
+        if (!baseUrl.startsWith('https://')) {
+            baseUrl = 'https://' + baseUrl;
+        }
+        this.socketUrl = `${baseUrl}/enviar-mensaje`;
         this.socketCanal = process.env.SOCKET_CANAL_V2;
         this.socketToken = process.env.SOCKET_TOKEN_V2;
-        this.socketUrl = process.env.SOCKET_URL_V2;
-
-        console.log('Socket configurado:');
-        console.log('Canal:', this.socketCanal);
+    
+        console.log('\n=== Socket Config ===');
         console.log('URL:', this.socketUrl);
+        console.log('Canal:', this.socketCanal);
+        console.log('Token:', this.socketToken);
+        console.log('===================\n');
     }
 
     async emitirEvento(tipo, nombreEvento, fecha, mensaje = null) {
