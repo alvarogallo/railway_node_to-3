@@ -17,31 +17,23 @@ async function createPool() {
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME || 'railway',
         port: 36100,
-        // Configuración optimizada
         connectionLimit: 10,
         queueLimit: 0,
         enableKeepAlive: true,
         keepAliveInitialDelay: 0,
         waitForConnections: true,
         connectTimeout: 10000,
-        timezone: 'America/Bogota'
+        // Usar formato UTC en lugar de zona horaria específica
+        timezone: '+00:00'
     };
-
+    
     try {
         const pool = mysql.createPool(config);
-        // Probar la conexión
         await pool.query('SELECT 1');
         console.log('\x1b[32m%s\x1b[0m', '✅ Conexión a base de datos establecida');
-        console.log('Configuración de conexión:', {
-            host: config.host,
-            user: config.user,
-            database: config.database,
-            port: config.port
-        });
         return pool;
     } catch (error) {
         console.error('\x1b[31m%s\x1b[0m', '❌ Error de conexión:', error.message);
-        console.log('\x1b[33m%s\x1b[0m', 'Intentando reconectar...');
         return null;
     }
 }

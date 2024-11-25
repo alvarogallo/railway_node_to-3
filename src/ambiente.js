@@ -143,9 +143,11 @@ class AmbienteTimer {
 
         this.timeStarts = nextPoints.map(date => ({
             time: this.formatTimeShort(date),
-            name: date.toISOString().slice(0,10).replace(/-/g, '') + '_' + 
-                 date.getHours().toString().padStart(2, '0') + 
-                 date.getMinutes().toString().padStart(2, '0'),
+            name: `${date.getFullYear()}${
+                String(date.getMonth() + 1).padStart(2, '0')}${
+                String(date.getDate()).padStart(2, '0')}_${
+                String(date.getHours()).padStart(2, '0')}${
+                String(date.getMinutes()).padStart(2, '0')}`,
             timestamp: date.getTime()
         }));
 
