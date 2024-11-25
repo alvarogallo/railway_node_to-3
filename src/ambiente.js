@@ -134,13 +134,9 @@ class AmbienteTimer {
     
         this.timeStarts = nextPoints.map(date => {
             const localTime = this.formatTimeShort(date);
-            const [hours, minutes] = localTime.split(':');
             return {
                 time: localTime,
-                name: `${date.getFullYear()}${
-                    String(date.getMonth() + 1).padStart(2, '0')}${
-                    String(date.getDate()).padStart(2, '0')}_${
-                    hours}${minutes}`,
+                name: date.toISOString().substring(0,10).replace(/-/g, '') + '_' + localTime.replace(':', ''),
                 timestamp: date.getTime()
             };
         });
