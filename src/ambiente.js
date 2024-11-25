@@ -188,12 +188,12 @@ class AmbienteTimer {
                             
                             // Emitir evento de inicio de bingo
                             const fecha_bingo = new Date(point.timestamp);
-                            await EventosService.emitirEvento(
+                            const eventoEmitido = await EventosService.emitirEvento(
                                 'Bingo',
                                 'Inicia',
                                 fecha_bingo
                             );
-
+                            console.log('Resultado emisión:', eventoEmitido ? '✅ Enviado' : '❌ Falló');
                             if (this.mysqlService?.isConnected) {
                                 await this.mysqlService.registrarTimeStart(fecha_bingo);
                             }
