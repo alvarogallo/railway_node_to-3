@@ -1,78 +1,77 @@
-// Archivo: mysqlEnvChecker.js
+// Archivo: testMySQLConnection.js
 
 require('dotenv').config();
+const mysql = require('mysql2/promise');
 
-// Variables requeridas para MySQL
-const REQUIRED_MYSQL_VARS = [
-    'DB_HOST',
-    'DB_USER',
-    'DB_PASSWORD',
-    'DB_NAME',
-    'DB_PORT'
-];
+async function testConnection() {
+    console.log('\n=== Probando Conexión a MySQL ===\n');
 
-function checkMySQLEnvironment() {
-    console.log('\n=== Variables de Entorno MySQL ===\n');
-    
-    let missingVars = [];
-    let configuredVars = [];
+    // Configuración de la conexión
+    const config = {
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        port: process.env.DB_PORT
+    };
 
-    REQUIRED_MYSQL_VARS.forEach(varName => {
-        const value = process.env[varName];
+    console.log('Intentando conectar con la siguiente configuración:');
+    console.log(`Host: ${config.host}`);
+    console.log(`Usuario: ${config.user}`);
+    console.log(`Base de datos: ${config.database}`);
+    console.log(`Puerto: ${config.port}`);
+    console.log('Contraseña: ********\n');
+
+    try {
+        // Intentar establecer la conexión
+        console.log('Estableciendo conexión...');
+        const connection = await mysql.createConnection(config);
         
-        if (!value) {
-            missingVars.push(varName);
-        } else {
-            // Ocultar la contraseña por seguridad
-            const displayValue = varName === 'DB_PASSWORD' ? '********' : value;
-            configuredVars.push({ name: varName, value: displayValue });
+        // Probar la conexión con una consulta simple
+        console.log('Conexión exitosa! Probando consulta...');
+        const [result] = await connection.query('SELECT 1 + 1 AS test');
+        
+        console.log('Consulta de prueba exitosa!');
+        console.log('Resultado:', result[0].test);
+
+        // Obtener información del servidor
+        const [version] = await connection.query('SELECT VERSION() as version');
+        console.log('\nInformación del servidor MySQL:');
+        console.log('Versión:', version[0].version);
+
+        // Mostrar las bases de datos disponibles
+        const [databases] = await connection.query('SHOW DATABASES');
+        console.log('\nBases de datos disponibles:');
+        databases.forEach(db => {
+            console.log(`- ${db.Database}`);
+        });
+
+        // Cerrar la conexión
+        await connection.end();
+        console.log('\nConexión cerrada correctamente');
+        
+    } catch (error) {
+        console.error('\n❌ Error al conectar:', error.message);
+        
+        // Sugerencias basadas en errores comunes
+        if (error.code === 'ECONNREFUSED') {
+            console.log('\nSugerencias:');
+            console.log('1. Verifica que el host y puerto sean correctos');
+            console.log('2. Asegúrate que el servidor MySQL esté corriendo');
+            console.log('3. Revisa si hay algún firewall bloqueando la conexión');
+        } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+            console.log('\nSugerencias:');
+            console.log('1. Verifica que el usuario y contraseña sean correctos');
+            console.log('2. Confirma que el usuario tenga permisos para conectarse desde tu IP');
+        } else if (error.code === 'ER_BAD_DB_ERROR') {
+            console.log('\nSugerencias:');
+            console.log('1. Verifica que el nombre de la base de datos sea correcto');
+            console.log('2. Asegúrate que la base de datos exista');
         }
-    });
-
-    // Mostrar variables configuradas
-    if (configuredVars.length > 0) {
-        console.log('Variables configuradas:');
-        configuredVars.forEach(({name, value}) => {
-            console.log(`${name}: ${value}`);
-        });
     }
 
-    // Mostrar variables faltantes
-    if (missingVars.length > 0) {
-        console.log('\n⚠️  Variables faltantes:');
-        missingVars.forEach(varName => {
-            console.log(`- ${varName}`);
-        });
-    }
-
-    // Mostrar string de conexión de ejemplo
-    if (configuredVars.length === REQUIRED_MYSQL_VARS.length) {
-        const { DB_HOST, DB_USER, DB_NAME, DB_PORT } = process.env;
-        console.log('\nString de conexión de ejemplo:');
-        console.log(`mysql://${DB_USER}:****@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
-    }
-
-    console.log('\n=== Fin del Reporte ===\n');
-
-    // Retornar true si todas las variables están configuradas
-    return missingVars.length === 0;
+    console.log('\n=== Fin de la Prueba ===\n');
 }
 
-// Ejecutar la verificación
-const isConfigComplete = checkMySQLEnvironment();
-
-// Ejemplo de cómo usar el resultado
-if (isConfigComplete) {
-    console.log('✅ Todas las variables necesarias están configuradas');
-} else {
-    console.log('❌ Faltan algunas variables necesarias');
-}
-
-// Ejemplo de cómo se verían las variables en el archivo .env:
-/*
-DB_HOST=localhost
-DB_USER=usuario
-DB_PASSWORD=contraseña
-DB_NAME=nombre_base_datos
-DB_PORT=3306
-*/
+// Ejecutar la prueba
+testConnection();
