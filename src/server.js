@@ -30,7 +30,7 @@ async function createPool() {
     try {
         const pool = mysql.createPool(config);
         await pool.query('SELECT 1');
-        console.log('\x1b[32m%s\x1b[0m', '✅ Conexión a base de datos establecida');
+        //console.log('\x1b[32m%s\x1b[0m', '✅ Conexión a base de datos establecida');
         return pool;
     } catch (error) {
         console.error('\x1b[31m%s\x1b[0m', '❌ Error de conexión:', error.message);

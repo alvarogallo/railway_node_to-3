@@ -12,6 +12,22 @@ function setupWebRoutes(app, pool) {
         }
 
         try {
+            await pool.execute(`
+CREATE TABLE IF NOT EXISTS bingo_conexiones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            `);
+            await pool.execute(`
+CREATE TABLE IF NOT EXISTS bingo_time_starts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            `);
+                
             // Crear tabla parametros si no existe
             await pool.execute(`
                 CREATE TABLE IF NOT EXISTS bingo_parametros (
