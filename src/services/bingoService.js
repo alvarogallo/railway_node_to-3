@@ -65,7 +65,7 @@ class BingoService {
         }
     }
 
-    start(fechaInicio = new Date()) {
+    async start(fechaInicio = new Date()) {
         if (this.isRunning) {
             console.log('El bingo ya está en curso');
             return;
