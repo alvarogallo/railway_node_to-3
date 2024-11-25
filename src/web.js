@@ -64,7 +64,7 @@ function setupWebRoutes(app, pool) {
         }
 
         try {
-            const [columns] = await pool.query('SHOW COLUMNS FROM bingos_parametros');
+            const [columns] = await pool.query('SHOW COLUMNS FROM bingo_parametros');
             const [data] = await pool.query('SELECT * FROM bingo_bingos ORDER BY id DESC LIMIT 10');
             
             res.json({
