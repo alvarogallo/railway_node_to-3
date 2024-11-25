@@ -19,7 +19,24 @@ function setupApiRoutes(ambienteTimer) {
         res.json(ambienteTimer.getStatus());
     });
 
-    
+    // Nueva ruta api_nums
+    router.get('/api_nums', (req, res) => {
+        const { bingoService } = ambienteTimer;
+        if (!bingoService || !bingoService.isRunning) {
+            return res.json({
+                start_time: null,
+                numbers: []
+            });
+        }
+
+        res.json({
+            start_time: moment(bingoService.startTime).format('YYYY-MM-DD HH:mm:ss'),
+            numbers: bingoService.usedNumbers.map((num, index) => ({
+                sec: index + 1,
+                num: num
+            }))
+        });
+    });    
 
     // GET: Obtener solo los puntos de arranque
     router.get('/time-starts', (req, res) => {

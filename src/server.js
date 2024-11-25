@@ -10,23 +10,7 @@ const mysql = require('mysql2/promise');
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.get('/api_nums', (req, res) => {
-    const { bingoService } = ambienteTimer;
-    if (!bingoService || !bingoService.isRunning) {
-        return res.json({
-            start_time: null,
-            numbers: []
-        });
-    }
 
-    res.json({
-        start_time: moment(bingoService.startTime).format('YYYY-MM-DD HH:mm:ss'),
-        numbers: bingoService.usedNumbers.map((num, index) => ({
-            sec: index + 1,
-            num: num
-        }))
-    });
-});
 
 async function createPool() {
     const config = {
