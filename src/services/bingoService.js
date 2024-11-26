@@ -75,7 +75,7 @@ class BingoService {
         this.formatoEvento = `Bingo_${moment(fechaInicio).format('YYYY-MM-DD_HH:mm')}`;
     
         // Enviar evento de inicio
-        await this.emitirNumero(0, 0, fechaInicio);
+        //await this.emitirNumero(0, 0, fechaInicio);
     
         console.log('\n=== NUEVO BINGO INICIADO ===');
         console.log('Formato de evento:', this.formatoEvento);
