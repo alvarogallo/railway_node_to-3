@@ -10,15 +10,35 @@ const mysql = require('mysql2/promise');
 const app = express();
 const port = process.env.PORT || 3000;
 
+//host: process.env.DB_HOST || 'autorack.proxy.rlwy.net',
+//password: process.env.DB_PASSWORD,
+//database: process.env.DB_NAME || 'railway',
+//port: process.env.DB_PORT || 36100,
+
+const desarrollo =  process.env.NODE_ENV || false;
+
+let host;
+let DB;
+let puerto;
+if(desarrollo==="development"){
+    host = process.env.DB_HOST;
+    DB =  process.env.DB_NAME;
+    puerto = process.env.DB_PORT;
+} else {
+    host = 'autorack.proxy.rlwy.net';
+    DB = 'railway';
+    puerto = 36100;
+}
 
 
 async function createPool() {
     const config = {
-        host: 'autorack.proxy.rlwy.net',
+        //host: 'autorack.proxy.rlwy.net',
+        host : host,
         user: process.env.DB_USER || 'root',
         password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME || 'railway',
-        port: 36100,
+        database: DB,
+        port: puerto,
         connectionLimit: 10,
         queueLimit: 0,
         enableKeepAlive: true,
@@ -32,10 +52,19 @@ async function createPool() {
     try {
         const pool = mysql.createPool(config);
         await pool.query('SELECT 1');
-        //console.log('\x1b[32m%s\x1b[0m', '✅ Conexión a base de datos establecida');
+        console.log('\x1b[32m%s\x1b[0m', '✅ Conexión a base de datos establecida');
         return pool;
     } catch (error) {
         console.error('\x1b[31m%s\x1b[0m', '❌ Error de conexión:', error.message);
+    
+        // Crear un objeto seguro sin la contraseña
+        const safeConfig = { ...config };
+        delete safeConfig.password;
+    
+        // Mostrar las variables de configuración seguras
+        console.log('\x1b[33m%s\x1b[0m', '🔍 Variables de configuración usadas (sin contraseña):');
+        console.log(safeConfig);
+    
         return null;
     }
 }

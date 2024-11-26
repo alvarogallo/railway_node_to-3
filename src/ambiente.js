@@ -245,16 +245,25 @@ class AmbienteTimer {
             [];
             
         // Calculamos el tiempo restante en formato amigable
-        const timeUntilExpire = this.expiresAt ? 
-            Math.max(0, Math.floor((this.expiresAt - now) / 1000 / 60)) : 0;
+        //const timeUntilExpire = this.expiresAt ? 
+        //    Math.max(0, Math.floor((this.expiresAt - now) / 1000 / 60)) : 0;
+        const proximoTimeStart = this.timeStarts.length > 0 ? this.timeStarts[0] : null;
+        const timeUntilNextSeconds = proximoTimeStart ? 
+            Math.max(0, Math.floor((proximoTimeStart.timestamp - now.getTime()) / 1000)) : 0;
+        
+        const minutosRestantes = Math.floor(timeUntilNextSeconds / 60);
+        const segundosRestantes = timeUntilNextSeconds % 60;
+
 
         return {
             conexiones: this.conexiones,
             createdAt: this.formatDateTime(this.createdAt),
             expiresAt: this.formatDateTime(this.expiresAt),
             tiempoRestante: {
-                minutos: timeUntilExpire,
-                formato: `${Math.floor(timeUntilExpire/60)}h ${timeUntilExpire%60}m`
+                minutos: minutosRestantes,
+                segundos: segundosRestantes,
+                formato: `${Math.floor(minutosRestantes/60)}h ${minutosRestantes%60}m ${segundosRestantes}s`,
+                totalSegundos: timeUntilNextSeconds
             },
             currentTime: this.formatTimeShort(now),
             timeStarts: this.timeStarts.map(point => ({
@@ -263,6 +272,8 @@ class AmbienteTimer {
                 secondsUntilStart: Math.max(0, Math.round((point.timestamp - now.getTime()) / 1000)),
                 minutosRestantes: Math.ceil(Math.max(0, (point.timestamp - now.getTime()) / 1000 / 60))
             })),
+
+
             isActive: !!this.timer,
             bingoEnCurso: this.bingoService ? this.bingoService.isRunning : false,
             bingo: {
