@@ -15,7 +15,55 @@ class BingoService {
         this.nextNumberTimeout = null;
     }
 
-    // ... otros métodos sin cambios ...
+    setPool(pool) {
+        this.pool = pool;
+        console.log('Pool MySQL configurado en BingoService');
+    }
+
+    setIntervalo(segundos) {
+        if (typeof segundos === 'number' && segundos > 0) {
+            this.intervaloSegundos = segundos;
+            console.log(`Intervalo de bingo actualizado a ${segundos} segundos`);
+        }
+    }
+
+    shuffle() {
+        for (let i = this.numbers.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.numbers[i], this.numbers[j]] = [this.numbers[j], this.numbers[i]];
+        }
+    }
+
+    getNextNumber() {
+        if (this.numbers.length === 0) {
+            console.log('❌ No hay más números disponibles');
+            this.stop();
+            return null;
+        }
+        const number = this.numbers.pop();
+        this.usedNumbers.push(number);
+        return number;
+    }
+
+    async emitirNumero(numero, secuencia, fecha) {
+        try {
+            const nombreEvento = this.formatoEvento || 'Bingo_error';
+            const mensaje = {
+                num: numero,
+                sec: secuencia,
+                hora: moment(fecha).format('HH:mm:ss')
+            };
+
+            await EventosService.emitirEvento(
+                'Bingo',
+                nombreEvento,
+                fecha,
+                mensaje
+            );
+        } catch (error) {
+            console.error('Error al emitir número:', error);
+        }
+    }
 
     async start(fechaInicio = new Date()) {
         if (this.isRunning) {
@@ -95,6 +143,7 @@ class BingoService {
         }
     }
 }
+
 
 const bingoService = new BingoService();
 console.log('BingoService creado y exportado');
