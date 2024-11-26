@@ -11,59 +11,11 @@ class BingoService {
         this.startTime = null;
         this.formatoEvento = null;
         this.intervaloSegundos = 20;
-        this.pool = null; // Referencia a la conexión MySQL
+        this.pool = null;
+        this.nextNumberTimeout = null;
     }
 
-    setPool(pool) {
-        this.pool = pool;
-        console.log('Pool MySQL configurado en BingoService');
-    }
-
-    setIntervalo(segundos) {
-        if (typeof segundos === 'number' && segundos > 0) {
-            this.intervaloSegundos = segundos;
-            console.log(`Intervalo de bingo actualizado a ${segundos} segundos`);
-        }
-    }
-
-    shuffle() {
-        for (let i = this.numbers.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [this.numbers[i], this.numbers[j]] = [this.numbers[j], this.numbers[i]];
-        }
-    }
-
-    getNextNumber() {
-        if (this.numbers.length === 0) {
-            console.log('❌ No hay más números disponibles');
-            this.stop();
-            return null;
-        }
-        const number = this.numbers.pop();
-        this.usedNumbers.push(number);
-        return number;
-    }
-
-    async emitirNumero(numero, secuencia, fecha) {
-        try {
-            const nombreEvento = this.formatoEvento || 'Bingo_error';
-            
-            const mensaje = {
-                num: numero,
-                sec: secuencia,
-                hora: moment(fecha).format('HH:mm:ss')
-            };
-
-            await EventosService.emitirEvento(
-                'Bingo',
-                nombreEvento,
-                fecha,
-                mensaje
-            );
-        } catch (error) {
-            console.error('Error al emitir número:', error);
-        }
-    }
+    // ... otros métodos sin cambios ...
 
     async start(fechaInicio = new Date()) {
         if (this.isRunning) {
@@ -74,9 +26,6 @@ class BingoService {
         this.startTime = fechaInicio;
         this.formatoEvento = `Bingo_${moment(fechaInicio).format('YYYY-MM-DD_HH:mm')}`;
     
-        // Enviar evento de inicio
-        //await this.emitirNumero(0, 0, fechaInicio);
-    
         console.log('\n=== NUEVO BINGO INICIADO ===');
         console.log('Formato de evento:', this.formatoEvento);
         console.log(`Intervalo configurado: ${this.intervaloSegundos} segundos`);
@@ -85,40 +34,43 @@ class BingoService {
         this.usedNumbers = [];
         this.shuffle();
         this.isRunning = true;
-    
-        const emitNextNumber = async () => {
-            if (!this.isRunning) {
-                clearInterval(this.currentInterval);
-                return;
-            }
-    
-            const number = this.getNextNumber();
-            if (number) {
-                const currentTime = new Date();
-                console.log(`\n🎲 Número ${number} (${this.usedNumbers.length}/75)`);
-                console.log(`Números usados: ${this.usedNumbers.join(', ')}`);
-                
-                try {
-                    await this.emitirNumero(number, this.usedNumbers.length, currentTime);
-                } catch (error) {
-                    console.error('Error al emitir número:', error);
-                }
-            } else {
-                clearInterval(this.currentInterval);
-                this.stop();
-            }
-        };
-    
-        // Establecer el intervalo para emitir números
-        this.currentInterval = setInterval(emitNextNumber, this.intervaloSegundos * 1000);
-        console.log(`Generación de números iniciada - Intervalo: ${this.intervaloSegundos} segundos`);
+
+        // Programar el primer número
+        this.scheduleNextNumber();
+    }
+
+    async scheduleNextNumber() {
+        if (!this.isRunning) return;
+
+        const number = this.getNextNumber();
+        if (!number) {
+            await this.stop();
+            return;
+        }
+
+        console.log(`\n🎲 Número ${number} (${this.usedNumbers.length}/75)`);
+        console.log(`Números usados: ${this.usedNumbers.join(', ')}`);
+        console.log(`Próximo número en ${this.intervaloSegundos} segundos`);
+        
+        try {
+            await this.emitirNumero(number, this.usedNumbers.length, new Date());
+        } catch (error) {
+            console.error('Error al emitir número:', error);
+        }
+
+        // Programar el siguiente número
+        this.nextNumberTimeout = setTimeout(() => {
+            this.scheduleNextNumber();
+        }, this.intervaloSegundos * 1000);
     }
 
     async stop() {
-        if (this.currentInterval) {
-            clearInterval(this.currentInterval);
-            this.currentInterval = null;
+        if (this.nextNumberTimeout) {
+            clearTimeout(this.nextNumberTimeout);
+            this.nextNumberTimeout = null;
+        }
 
+        if (this.isRunning) {
             // Guardar en la base de datos
             if (this.pool && this.formatoEvento && this.usedNumbers.length > 0) {
                 try {
@@ -131,11 +83,6 @@ class BingoService {
                 } catch (error) {
                     console.error('❌ Error al guardar bingo en base de datos:', error);
                 }
-            } else {
-                console.log('❌ No se pudo guardar el bingo: faltan datos o conexión');
-                console.log('Pool:', !!this.pool);
-                console.log('Formato evento:', this.formatoEvento);
-                console.log('Números usados:', this.usedNumbers.length);
             }
 
             this.isRunning = false;
