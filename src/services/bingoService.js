@@ -13,7 +13,58 @@ class BingoService {
         this.intervaloSegundos = 20;
         this.pool = null;
         this.nextNumberTimeout = null;
+        this.countdownInterval = null;
     }
+
+    async startCountdown() {
+        // Calcula el próximo minuto exacto
+        const now = new Date();
+        const nextMinute = new Date(now);
+        nextMinute.setSeconds(0);
+        nextMinute.setMilliseconds(0);
+        nextMinute.setMinutes(nextMinute.getMinutes() + 1);
+        
+        // Espera hasta el próximo minuto exacto
+        const waitTime = nextMinute.getTime() - now.getTime();
+        
+        setTimeout(() => {
+            this.sendCountdownMinute();
+            // Configura el intervalo para cada minuto exacto
+            this.countdownInterval = setInterval(() => {
+                this.sendCountdownMinute();
+            }, 60000); // 60000ms = 1 minuto
+        }, waitTime);
+    }
+
+    async sendCountdownMinute() {
+        const now = new Date();
+        const minutes = 30 - now.getMinutes() % 30;
+        
+        if (minutes <= 7) {
+            try {
+                await EventosService.emitirEvento(
+                    'Bingo',
+                    'minutos_faltan',
+                    now,
+                    {
+                        minutos: minutes
+                    }
+                );
+                console.log(`Enviado evento minutos_faltan: ${minutes}`);
+            } catch (error) {
+                console.error('Error al enviar minutos restantes:', error);
+            }
+        }
+
+        // Si llegamos a 0 minutos, detenemos el countdown
+        if (minutes === 0) {
+            if (this.countdownInterval) {
+                clearInterval(this.countdownInterval);
+                this.countdownInterval = null;
+            }
+        }
+    }
+
 
     setPool(pool) {
         this.pool = pool;
@@ -141,8 +192,21 @@ class BingoService {
             console.log('\n=== BINGO FINALIZADO ===');
             console.log(`Total números generados: ${this.usedNumbers.length}`);
             console.log(`Números utilizados: ${this.usedNumbers.join(', ')}`);
+
+            // Iniciar la cuenta regresiva después de terminar el bingo
+            if (this.usedNumbers.length === 75) {
+                await this.startCountdown();
+            }
+        }
+        reset() {
+            if (this.countdownInterval) {
+                clearInterval(this.countdownInterval);
+                this.countdownInterval = null;
+            }
+            // ... cualquier otra lógica de reset que ya exista
         }
     }
+
 }
 
 
