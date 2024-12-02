@@ -154,7 +154,10 @@ class BingoService {
         this.isRunning = true;
 
         // Programar el primer número
-        this.scheduleNextNumber();
+        //this.scheduleNextNumber();
+        setTimeout(() => {
+            this.scheduleNextNumber();
+        }, this.intervaloSegundos * 1000);        
     }
 
     async scheduleNextNumber() {
