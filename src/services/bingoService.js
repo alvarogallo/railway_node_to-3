@@ -198,15 +198,14 @@ class BingoService {
                 await this.startCountdown();
             }
         }
-        reset() {
-            if (this.countdownInterval) {
-                clearInterval(this.countdownInterval);
-                this.countdownInterval = null;
-            }
-            // ... cualquier otra lógica de reset que ya exista
-        }
     }
-
+    reset() {
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+        }
+        // ... cualquier otra lógica de reset que ya exista
+    }
 }
 
 
