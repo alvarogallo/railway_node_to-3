@@ -17,6 +17,12 @@ class BingoService {
     }
 
     async startCountdown() {
+        // Primero limpiamos cualquier intervalo existente para evitar duplicados
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+        }
+
         // Calcula el próximo minuto exacto
         const now = new Date();
         const nextMinute = new Date(now);
@@ -44,7 +50,7 @@ class BingoService {
             try {
                 await EventosService.emitirEvento(
                     'Bingo',
-                    'minutos_faltan',
+                    'faltan',
                     now,
                     {
                         minutos: minutes
