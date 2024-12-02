@@ -34,11 +34,13 @@ class BingoService {
         const waitTime = nextMinute.getTime() - now.getTime();
         
         setTimeout(() => {
-            this.sendCountdownMinute();
+            //this.sendCountdownMinute();
             // Configura el intervalo para cada minuto exacto
             this.countdownInterval = setInterval(() => {
                 this.sendCountdownMinute();
             }, 60000); // 60000ms = 1 minuto
+            // Primera llamada dentro del setTimeout
+            this.sendCountdownMinute();            
         }, waitTime);
     }
 
