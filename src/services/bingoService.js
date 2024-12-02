@@ -14,14 +14,16 @@ class BingoService {
         this.pool = null;
         this.nextNumberTimeout = null;
         this.countdownInterval = null;
+        this.lastMinuteSent = null;
     }
 
     async startCountdown() {
-        // Primero limpiamos cualquier intervalo existente para evitar duplicados
+        // Limpiamos cualquier intervalo existente y el último minuto enviado
         if (this.countdownInterval) {
             clearInterval(this.countdownInterval);
             this.countdownInterval = null;
         }
+        this.lastMinuteSent = null;
 
         // Calcula el próximo minuto exacto
         const now = new Date();
@@ -30,17 +32,14 @@ class BingoService {
         nextMinute.setMilliseconds(0);
         nextMinute.setMinutes(nextMinute.getMinutes() + 1);
         
-        // Espera hasta el próximo minuto exacto
         const waitTime = nextMinute.getTime() - now.getTime();
         
         setTimeout(() => {
-            //this.sendCountdownMinute();
-            // Configura el intervalo para cada minuto exacto
             this.countdownInterval = setInterval(() => {
                 this.sendCountdownMinute();
-            }, 60000); // 60000ms = 1 minuto
-            // Primera llamada dentro del setTimeout
-            this.sendCountdownMinute();            
+            }, 60000);
+            
+            this.sendCountdownMinute();
         }, waitTime);
     }
 
@@ -48,7 +47,7 @@ class BingoService {
         const now = new Date();
         const minutes = 30 - now.getMinutes() % 30;
         
-        if (minutes <= 7) {
+        if (minutes <= 5 && minutes > 0 && this.lastMinuteSent !== minutes) {
             try {
                 await EventosService.emitirEvento(
                     'Bingo',
@@ -58,21 +57,21 @@ class BingoService {
                         minutos: minutes
                     }
                 );
-                console.log(`Enviado evento minutos_faltan: ${minutes}`);
+                console.log(`Enviado evento faltan: ${minutes} minutos`);
+                this.lastMinuteSent = minutes;
             } catch (error) {
                 console.error('Error al enviar minutos restantes:', error);
             }
         }
 
-        // Si llegamos a 0 minutos, detenemos el countdown
         if (minutes === 0) {
+            this.lastMinuteSent = null;
             if (this.countdownInterval) {
                 clearInterval(this.countdownInterval);
                 this.countdownInterval = null;
             }
         }
     }
-
 
     setPool(pool) {
         this.pool = pool;
@@ -207,15 +206,15 @@ class BingoService {
             }
         }
     }
+
     reset() {
         if (this.countdownInterval) {
             clearInterval(this.countdownInterval);
             this.countdownInterval = null;
         }
-        // ... cualquier otra lógica de reset que ya exista
+        this.lastMinuteSent = null;
     }
 }
-
 
 const bingoService = new BingoService();
 console.log('BingoService creado y exportado');
