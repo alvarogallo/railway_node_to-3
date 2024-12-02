@@ -24,7 +24,7 @@ class BingoService {
             this.countdownInterval = null;
         }
         this.lastMinuteSent = null;
-
+    
         // Calcula el próximo minuto exacto
         const now = new Date();
         const nextMinute = new Date(now);
@@ -34,36 +34,47 @@ class BingoService {
         
         const waitTime = nextMinute.getTime() - now.getTime();
         
-        setTimeout(() => {
-            this.countdownInterval = setInterval(() => {
-                this.sendCountdownMinute();
-            }, 60000);
-            
-            this.sendCountdownMinute();
-        }, waitTime);
+        // Usamos una Promise para asegurar que solo se ejecute una vez
+        await new Promise(resolve => {
+            setTimeout(async () => {
+                // Primera ejecución
+                await this.sendCountdownMinute();
+                
+                // Configurar el intervalo después
+                this.countdownInterval = setInterval(async () => {
+                    await this.sendCountdownMinute();
+                }, 60000);
+                
+                resolve();
+            }, waitTime);
+        });
     }
 
     async sendCountdownMinute() {
         const now = new Date();
         const minutes = 30 - now.getMinutes() % 30;
         
+        // Agregamos un console.log para debug
+        console.log(`Checking minutes: ${minutes}, lastMinuteSent: ${this.lastMinuteSent}`);
+        
         if (minutes <= 5 && minutes > 0 && this.lastMinuteSent !== minutes) {
+            this.lastMinuteSent = minutes; // Movemos esto al principio para prevenir race conditions
+            
             try {
                 await EventosService.emitirEvento(
                     'Bingo',
-                    'faltan',
+                    'faltan_v1',
                     now,
                     {
                         minutos: minutes
                     }
                 );
                 console.log(`Enviado evento faltan: ${minutes} minutos`);
-                this.lastMinuteSent = minutes;
             } catch (error) {
                 console.error('Error al enviar minutos restantes:', error);
             }
         }
-
+    
         if (minutes === 0) {
             this.lastMinuteSent = null;
             if (this.countdownInterval) {
