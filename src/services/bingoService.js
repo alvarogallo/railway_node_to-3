@@ -63,7 +63,7 @@ class BingoService {
             try {
                 await EventosService.emitirEvento(
                     'Bingo',
-                    'faltan_v1',
+                    'faltan',
                     now,
                     {
                         minutos: minutes
